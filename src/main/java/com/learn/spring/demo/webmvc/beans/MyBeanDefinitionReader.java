@@ -44,11 +44,11 @@ public class MyBeanDefinitionReader {
         doScanner(config.getProperty(SCAN_PACKAGE));
     }
 
-    public Properties getConfig(){
+    public Properties getConfig() {
         return this.config;
     }
 
-    //扫描目录下文件，并将className封装到registBeanClasses中
+    //扫描目录下文件，并将className(例如：com.example.demo.Person)封装到registBeanClasses中
     private void doScanner(String scanPackage) {
         //转换为文件路径，实际上就是把.替换为/
         URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replace("\\.", "/"));
@@ -56,11 +56,11 @@ public class MyBeanDefinitionReader {
         for (File file : classPath.listFiles()) {
             if (file.isDirectory()) {
                 doScanner(scanPackage + "." + file.getName());
-            }else {
-                if(!file.getName().endsWith(".class")){
+            } else {
+                if (!file.getName().endsWith(".class")) {
                     continue;
                 }
-                String className=scanPackage+"."+file.getName().replace(".class","");
+                String className = scanPackage + "." + file.getName().replace(".class", "");
                 registBeanClasses.add(className);
             }
         }
@@ -70,7 +70,35 @@ public class MyBeanDefinitionReader {
 
     //
     public List<MyBeanDefinition> loadBeanDefinitions() {
+        List<MyBeanDefinition> result = new ArrayList<>();
+        for (String className : registBeanClasses) {
+            try {
+                Class<?> clazz = Class.forName(className);
+                if(clazz.isInterface()){
+                    continue;
+                }
+                //如果不是接口，则先创建MyBeanDefinition，再封装到result中，然后返回
+                MyBeanDefinition myBeanDefinition = doCreateBeanDefinition(toLowerFirstCase(clazz.getSimpleName()), clazz.getName());
+                result.add(myBeanDefinition);
 
-        return null;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
+    }
+
+    private MyBeanDefinition doCreateBeanDefinition(String factoryBeanName, String beanClassName) {
+        MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
+        myBeanDefinition.setBeanClassName(beanClassName);
+        myBeanDefinition.setFactoryBeanName(factoryBeanName);
+
+        return myBeanDefinition;
+    }
+    //将第一个首字母小写
+    private String toLowerFirstCase(String simpleName){
+        char[] chars = simpleName.toCharArray();
+        chars[0]+=32;
+        return String.valueOf(chars);
     }
 }

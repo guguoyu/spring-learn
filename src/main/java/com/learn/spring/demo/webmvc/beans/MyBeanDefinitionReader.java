@@ -17,7 +17,7 @@ import java.util.Properties;
 //用于对配置文件查找，读取，解析
 public class MyBeanDefinitionReader {
 
-    private List<String> registBeanClasses = new ArrayList<>();
+    private List<String> registBeanClasses = new ArrayList<String>();
 
     private Properties config = new Properties();
 
@@ -68,19 +68,22 @@ public class MyBeanDefinitionReader {
     }
 
 
-    //
+    //把配置文件
     public List<MyBeanDefinition> loadBeanDefinitions() {
-        List<MyBeanDefinition> result = new ArrayList<>();
+        List<MyBeanDefinition> result = new ArrayList<MyBeanDefinition>();
         for (String className : registBeanClasses) {
             try {
-                Class<?> clazz = Class.forName(className);
-                if(clazz.isInterface()){
+                Class<?> beanClass = Class.forName(className);
+                if (beanClass.isInterface()) {
                     continue;
                 }
                 //如果不是接口，则先创建MyBeanDefinition，再封装到result中，然后返回
-                MyBeanDefinition myBeanDefinition = doCreateBeanDefinition(toLowerFirstCase(clazz.getSimpleName()), clazz.getName());
+                MyBeanDefinition myBeanDefinition = doCreateBeanDefinition(toLowerFirstCase(beanClass.getSimpleName()), beanClass.getName());
                 result.add(myBeanDefinition);
-
+                Class<?>[] interfaces = beanClass.getInterfaces();
+                for (Class<?> anInterface : interfaces) {
+                    result.add(doCreateBeanDefinition(anInterface.getName(), beanClass.getName()));
+                }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -88,17 +91,21 @@ public class MyBeanDefinitionReader {
         return result;
     }
 
+    //把每一个配置信息解析成一个MyBeanDefinition
     private MyBeanDefinition doCreateBeanDefinition(String factoryBeanName, String beanClassName) {
         MyBeanDefinition myBeanDefinition = new MyBeanDefinition();
         myBeanDefinition.setBeanClassName(beanClassName);
         myBeanDefinition.setFactoryBeanName(factoryBeanName);
-
         return myBeanDefinition;
     }
+
     //将第一个首字母小写
-    private String toLowerFirstCase(String simpleName){
+    private String toLowerFirstCase(String simpleName) {
+        //因为大写字母的ASCII码小于 小写字母的ASCII码
+        //而且大小写字母相差正好32
+        //在Java中，对char做数学运算，就是对ASCII码做运算
         char[] chars = simpleName.toCharArray();
-        chars[0]+=32;
+        chars[0] += 32;
         return String.valueOf(chars);
     }
 }

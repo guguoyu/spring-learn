@@ -5,6 +5,7 @@ import com.learn.spring.demo.webmvc.beans.MyBeanDefinitionReader;
 import com.learn.spring.demo.webmvc.core.MyBeanFactory;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author guguoyu
@@ -38,13 +39,25 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
         //4.把不是延时加载的类，提前初始化
         doAutowired();
     }
-
+    //只处理非延迟加载的情况
     private void doAutowired() {
-
+        Set<String> keySet = super.beanDefinitionMap.keySet();
+        for (String beanName : keySet) {
+            MyBeanDefinition myBeanDefinition = beanDefinitionMap.get(beanName);
+            if(!myBeanDefinition.isLazyInit()){
+                getBean(beanName);
+            }
+        }
     }
 
-    private void doRegisterBeanDefinition(List<MyBeanDefinition> beanDefinitions) {
-
+    private void doRegisterBeanDefinition(List<MyBeanDefinition> beanDefinitions) throws Exception {
+        for (MyBeanDefinition beanDefinition : beanDefinitions) {
+            if(super.beanDefinitionMap.containsKey(beanDefinition.getFactoryBeanName())){
+                throw  new Exception("The “"+beanDefinition.getFactoryBeanName()+"” is exists!");
+            }
+            super.beanDefinitionMap.put(beanDefinition.getFactoryBeanName(),beanDefinition);
+        }
+        //到这里，容器初始化完毕
     }
 
     @Override

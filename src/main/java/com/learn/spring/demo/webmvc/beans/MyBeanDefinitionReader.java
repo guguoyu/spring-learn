@@ -16,7 +16,7 @@ import java.util.Properties;
 
 //用于对配置文件查找，读取，解析
 public class MyBeanDefinitionReader {
-
+    //里面存储的元素为className,例如：com.learn.spring.demo.webmvc.annotation.MyAutowired
     private List<String> registBeanClasses = new ArrayList<String>();
 
     private Properties config = new Properties();
@@ -48,10 +48,13 @@ public class MyBeanDefinitionReader {
         return this.config;
     }
 
-    //扫描目录下文件，并将className(例如：com.example.demo.Person)封装到registBeanClasses中
+    //扫描目录下文件，并将className(例如：com.example.demo.Person)封装到registBeanClasses-List<String>中
     private void doScanner(String scanPackage) {
+
         //转换为文件路径，实际上就是把.替换为/
-        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replace("\\.", "/"));
+
+        URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
+        System.out.println(url);
         File classPath = new File(url.getFile());
         for (File file : classPath.listFiles()) {
             if (file.isDirectory()) {

@@ -12,6 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MyDefaultListableBeanFactory extends MyAbstractApplicationContext {
 
-    //存储注册信息的BeanDefinition
+    //存储注册信息的BeanDefinition，key为 myBeanDefinitionReader，value为MyBeanDefinition实体对象
     protected final Map<String, MyBeanDefinition> beanDefinitionMap= new ConcurrentHashMap<String,MyBeanDefinition>();
 }

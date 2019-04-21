@@ -9,11 +9,11 @@ package com.learn.spring.demo.webmvc.beans;
  * @since JDK 1.8
  */
 public class MyBeanDefinition {
-
+    //例如：com.learn.spring.demo.webmvc.beans.MyBeanDefinitionReader
     private String beanClassName;
 
     private boolean lazyInit=false;
-
+    //例如：myBeanDefinitionReader
     private String factoryBeanName;
 
     public String getBeanClassName() {

@@ -112,9 +112,22 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
     private Object instantiateBean(MyBeanDefinition beanDefinition) {
         Object instance = null;
         String className = beanDefinition.getBeanClassName();
-        if(this.singletonBeanCacheMap.containsKey(className)){
-            return singletonBeanCacheMap.get(className);
+        if (this.singletonBeanCacheMap.containsKey(className)) {
+            instance = singletonBeanCacheMap.get(className);
+        } else {
+            try {
+                Class<?> clazz = Class.forName(className);
+                instance = clazz.newInstance();
+                this.singletonBeanCacheMap.put(beanDefinition.getFactoryBeanName(),instance);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
         }
 
+        return instance;
     }
 }

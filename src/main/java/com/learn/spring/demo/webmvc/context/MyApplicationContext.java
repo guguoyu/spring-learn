@@ -1,8 +1,11 @@
 package com.learn.spring.demo.webmvc.context;
 
+import com.learn.spring.demo.webmvc.annotation.MyController;
+import com.learn.spring.demo.webmvc.annotation.MyService;
 import com.learn.spring.demo.webmvc.beans.MyBeanDefinition;
 import com.learn.spring.demo.webmvc.beans.MyBeanDefinitionReader;
 import com.learn.spring.demo.webmvc.beans.MyBeanWrapper;
+import com.learn.spring.demo.webmvc.core.GetBeanPostProcessor;
 import com.learn.spring.demo.webmvc.core.MyBeanFactory;
 
 import java.util.List;
@@ -22,11 +25,11 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
     private String[] configLocations;
 
     private MyBeanDefinitionReader reader;
-    //用来保证注册式单例的容器
-    private Map<String, Object> singletonBeanCacheMap = new ConcurrentHashMap<String, Object>();
+    //单例的IOC容器缓存
+    private Map<String, Object> singletonObjects = new ConcurrentHashMap<String, Object>();
 
     //通用IOC容器
-    private Map<String, MyBeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<String, MyBeanWrapper>();
+    private Map<String, MyBeanWrapper> beanWrapperMap = new ConcurrentHashMap<String, MyBeanWrapper>();
 
     public MyApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
@@ -101,29 +104,64 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
         return getBean(beanClass.getName());
     }
 
+    /**
+     * 依赖注入，从这里开始，通过读取BeanDefinition中的信息
+     * 然后，通过反射机制创建要给实例返回
+     * Spring的做法，不会把原始对象放出去，会用一个BeanWrapper来进行一次包装
+     * 装饰模式：
+     * 1.保留原来的OOP关系
+     * 2.我需要对它进行扩展，增强（为后面的AOP打基础）
+     *
+     * @param beanName
+     * @return
+     */
     @Override
     public Object getBean(String beanName) {
         MyBeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
-        instantiateBean(beanDefinition);
-        return null;
+
+        GetBeanPostProcessor beanPostProcessor = new GetBeanPostProcessor();
+
+        Object instance = instantiateBean(beanDefinition);
+        if (null == instance) {
+            return null;
+        }
+        try {
+            //在实例初始化以前调用一次
+            beanPostProcessor.postProcessBeforeInitialization(instance, beanName);
+            MyBeanWrapper beanWrapper = new MyBeanWrapper(instance);
+            this.beanWrapperMap.put(beanName, beanWrapper);
+            //在实例初始化以后调用一次
+            beanPostProcessor.postProcessAfterInitialization(instance, beanName);
+            populateBean(beanName, instance);
+            Object wrappedInstance = this.beanWrapperMap.get(beanName).getWrappedInstance();
+            return wrappedInstance;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    //填充bean，也就是DI注入，给
+    private void populateBean(String beanName, Object instance) {
+        Class<?> clazz = instance.getClass();
+        //如果该类没有被MyController和MyService,则不需要注入
+        if(!clazz.isAnnotationPresent(MyController.class)||clazz.isAnnotationPresent(MyService.class)){
+            return;
+        }
+
     }
 
     //传一个BeanDefinition,就返回一个实例Bean
     private Object instantiateBean(MyBeanDefinition beanDefinition) {
         Object instance = null;
         String className = beanDefinition.getBeanClassName();
-        if (this.singletonBeanCacheMap.containsKey(className)) {
-            instance = singletonBeanCacheMap.get(className);
+        if (this.singletonObjects.containsKey(className)) {
+            instance = singletonObjects.get(className);
         } else {
             try {
                 Class<?> clazz = Class.forName(className);
                 instance = clazz.newInstance();
-                this.singletonBeanCacheMap.put(beanDefinition.getFactoryBeanName(),instance);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
+                this.singletonObjects.put(beanDefinition.getFactoryBeanName(), instance);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

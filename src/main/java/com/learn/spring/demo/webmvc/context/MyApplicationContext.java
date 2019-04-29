@@ -104,8 +104,8 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
     @Override
     public Object getBean(String beanName) {
         MyBeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
-        instantiateBean(beanDefinition);
-        return null;
+        Object bean = instantiateBean(beanDefinition);
+        return bean;
     }
 
     //传一个BeanDefinition,就返回一个实例Bean

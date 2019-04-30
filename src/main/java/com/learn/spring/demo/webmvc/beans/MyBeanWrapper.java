@@ -6,9 +6,9 @@ package com.learn.spring.demo.webmvc.beans;
  * @since JDK 1.8
  */
 public class MyBeanWrapper {
-
+    //实例对象
     private Object wrappedInstance;
-
+    //实例的Class
     private Class<?> wrappedClass;
 
     public MyBeanWrapper(Object wrappedInstance){

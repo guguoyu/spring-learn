@@ -104,7 +104,7 @@ public class MyDispatcherServlet extends HttpServlet {
     private void initHandlerAdapters(MyApplicationContext context) {
 
     }
-
+    //将Controller中配置的RequestMaping和Method进行一一对应
     private void initHandlerMapping(MyApplicationContext context) {
 
     }

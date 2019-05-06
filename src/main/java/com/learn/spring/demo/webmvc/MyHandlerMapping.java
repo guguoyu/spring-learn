@@ -9,9 +9,9 @@ import java.util.regex.Pattern;
  * @since JDK 1.8
  */
 public class MyHandlerMapping {
-
+    //controller对象
     private Object controller;
-
+    //一个url对应一个方法
     private Method method;
 
     //url的封装

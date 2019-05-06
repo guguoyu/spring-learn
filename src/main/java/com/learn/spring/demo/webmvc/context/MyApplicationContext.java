@@ -1,5 +1,6 @@
 package com.learn.spring.demo.webmvc.context;
 
+import com.learn.spring.demo.webmvc.annotation.MyAutowired;
 import com.learn.spring.demo.webmvc.annotation.MyController;
 import com.learn.spring.demo.webmvc.annotation.MyService;
 import com.learn.spring.demo.webmvc.beans.MyBeanDefinition;
@@ -8,6 +9,7 @@ import com.learn.spring.demo.webmvc.beans.MyBeanWrapper;
 import com.learn.spring.demo.webmvc.core.GetBeanPostProcessor;
 import com.learn.spring.demo.webmvc.core.MyBeanFactory;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -140,12 +142,35 @@ public class MyApplicationContext extends MyDefaultListableBeanFactory implement
             return null;
         }
     }
-    //填充bean，也就是DI注入，给
+
+    //填充bean，也就是DI注入，给类下面的字段注入bean
     private void populateBean(String beanName, Object instance) {
         Class<?> clazz = instance.getClass();
         //如果该类没有被MyController和MyService,则不需要注入
-        if(!clazz.isAnnotationPresent(MyController.class)||clazz.isAnnotationPresent(MyService.class)){
+        if (!clazz.isAnnotationPresent(MyController.class) || clazz.isAnnotationPresent(MyService.class)) {
             return;
+        }
+        //否则就需要给字段注入bean
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            //首先判断字段是否被@MyAutuwired修饰
+            if (!field.isAnnotationPresent(MyAutowired.class)) {
+                continue;
+            }
+            //获取字段被修饰的注解对象
+            MyAutowired autowired = field.getAnnotation(MyAutowired.class);
+            //获取到注解对象的值
+            String autowiredBeanName = autowired.value().trim();
+            if ("".equals(autowiredBeanName)) {
+                autowiredBeanName = field.getType().getName();
+            }
+            field.setAccessible(true);
+            try {
+                //给字段设置属性，就相当于person.setName("张三"); 这里的person相当于这里的instance,"张三"就是value
+                field.set(instance,this.beanWrapperMap.get(autowiredBeanName).getWrappedInstance());
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
         }
 
     }
